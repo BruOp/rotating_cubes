@@ -7,7 +7,7 @@ var orientations;
 function init() {
   var height = window.innerHeight;
   var width  = window.innerWidth;
-  var ROW_COUNT = 1;
+  var ROW_COUNT = 20;
   var boxLengthInPixels = height / ROW_COUNT;
   var COLUMN_COUNT = Math.ceil(width / boxLengthInPixels);
 
