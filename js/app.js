@@ -13,7 +13,7 @@ function init() {
 
   container = document.getElementById( 'container' );
   
-  camera = new THREE.OrthographicCamera( -.5 * width, .5 * width, .5 * height, -.5 * height, 1, boxLengthInPixels * 4 );
+  camera = new THREE.OrthographicCamera( -.5 * width, .5 * width, .5 * height, -.5 * height, 1, boxLengthInPixels * (COLUMN_COUNT + ROW_COUNT + 1) );
   camera.position.z = boxLengthInPixels * 2;
 
   renderer = new THREE.WebGLRenderer();
@@ -34,13 +34,18 @@ function init() {
   var dx = (boxLengthInPixels / width);
   var dy = 1 / ROW_COUNT;
   for ( var i = 0, ul = offsets.count; i < ul; i++ ) {
-    columnIndex = (i % COLUMN_COUNT)
-    rowIndex    = Math.floor(i / COLUMN_COUNT)
-    //If we have an odd number of rows/columns
-    var x = width  * (dx * (columnIndex - .5 * COLUMN_COUNT + 0.5));
-    var y = height * (dy * (rowIndex - .5 * ROW_COUNT + 0.5));
-    // move out at least 5 units from center in current direction
-    offsets.setXYZ( i, x, y, 0 );
+    var columnIndex = (i % COLUMN_COUNT)
+    var rowIndex    = Math.floor(i / COLUMN_COUNT)
+    var distanceFromCenterX = columnIndex - (.5 * COLUMN_COUNT);
+    var distanceFromCenterY = rowIndex - (.5 * ROW_COUNT);
+    
+    var x = width  * (dx * (distanceFromCenterX + 0.5));
+    var y = height * (dy * (distanceFromCenterY + 0.5));
+    var z = (Math.abs(Math.ceil(distanceFromCenterX)) 
+            + Math.abs(Math.ceil(distanceFromCenterY)))
+            * -boxLengthInPixels;
+
+    offsets.setXYZ( i, x, y, z );
   }
 
   geometry.addAttribute( 'offset', offsets ); // per mesh translation
@@ -97,8 +102,6 @@ function onWindowResize( event ) {
   renderer.setSize( window.innerWidth, window.innerHeight );
 
 }
-
-//
 
 function animate() {
 
