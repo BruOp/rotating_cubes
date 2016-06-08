@@ -22,7 +22,7 @@ function calculateOffsets(width, height, boxGrid) {
   return offsets;
 }
 
-function BoxGrid(width, height) {
+function InstancedBoxGridGeometry(width, height) {
   
   this.rowCount = 20;
   this.boxLengthInPixels = height / this.rowCount;

@@ -29,17 +29,9 @@ function Simulation(width, height, shaderHash) {
       this.setSimUniform('mouse_magnitude', 0.0);
     }
     
-    this.onMouseClick = function(event) {
-      var mouse = new THREE.Vector2(event.offsetX / this.width, 1 - (event.offsetY / this.height));
-      // raycaster.setFromCamera(mouse, orthoCamera);
-      // 
-      // var intersects = raycaster.intersectObjects(scene.children);
-      // if (intersects.length > 0) {
-      //   intersect.copy(intersects[0].uv);
-      // }
-      this.setSimUniform('mouse', mouse);
-      this.setSimUniform('mouse_magnitude', 1);
-    };
+    this.getPositionTexture = function() {
+      return this.rtPositionCur.texture
+    }
     
     this.init = function() {
       this.raycaster = new THREE.Raycaster();
@@ -78,7 +70,7 @@ function Simulation(width, height, shaderHash) {
       
       var simulationMaterial = new THREE.ShaderMaterial({
         uniforms: {
-          position_texture: { type: 't', value: this.rtPositionCur },
+          position_texture: { type: 't', value: this.rtPositionCur.texture },
           mouse: { type: "v2", value: this.intersect },
           dx: { type: 'f', value: 1/this.width },
           dy: { type: 'f', value: 1/this.height },

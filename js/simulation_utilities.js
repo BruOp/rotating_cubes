@@ -22,15 +22,14 @@ var SimulationUtilities = function() {
     // arr[center] = 0.50001;
     
     var texture = new THREE.DataTexture(arr, width, height, THREE.RGBAFormat, THREE.FloatType, THREE.UVMapping);
-    
     texture.needsUpdate = true;
     return texture;
   }
 
   function getRenderTarget(width, height) {
     var renderTarget = new THREE.WebGLRenderTarget(width, height, {
-      wrapS: THREE.MirroredRepeatWrapping,
-      wrapT: THREE.MirroredRepeatWrapping,
+      wrapS: THREE.ClampToEdge,
+      wrapT: THREE.ClampToEdge,
       minFilter: THREE.NearestFilter,
       magFilter: THREE.NearestFilter,
       format: THREE.RGBAFormat,
