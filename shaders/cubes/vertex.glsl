@@ -36,11 +36,11 @@ vec2 getScreenUV(vec3 offset) {
 
 vec2 convertToRadians(vec2 rotations) {
   // We expect 'rotation' to be normalized from 0 to 1.
-  return 2. * M_PI * (rotations - vec2(.5, .5));
+  return 4. * M_PI * (rotations - vec2(.5, .5));
 }
 
-mat4 constructTransformationMatrix(vec2 rotation_angles, vec3 offset) {
-  vec2 angles = rotation_angles;
+mat4 constructTransformationMatrix(vec2 angles, vec3 offset) {
+  // vec2 angles = rotation_angles;
   mat4 rotationMatrix;
   //The index here refers to the COLUMNS of the matrix
   rotationMatrix[0] = vec4(

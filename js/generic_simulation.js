@@ -16,6 +16,14 @@ GenericSimulation.prototype = {
   setSimUniform: function(uniformName, newValue) {
     return this.setUniform(this.simulationMesh, uniformName, newValue);
   },
+  
+  getUniform: function(mesh, uniformName) {
+    return mesh.material.uniforms[uniformName].value;
+  },
+  
+  getSimUniform: function(uniformName) {
+    return this.simulationMesh.material.uniforms[uniformName].value;
+  },
 
   passThroughRender: function(input, output) {
     this.setUniform(this.passThroughMesh, 'texture', input);

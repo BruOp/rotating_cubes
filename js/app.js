@@ -43,7 +43,7 @@ function init() {
   renderer.setSize( width, height );
 
   // simulation = new Simulation(2 * boxGrid.columnCount, 2 * boxGrid.rowCount, simulationShaderHash);
-  simulation = new Simulation(renderer, boxGrid.columnCount, boxGrid.rowCount, simulationShaderHash);
+  simulation = new Simulation(renderer, 2 * boxGrid.columnCount, 2 * boxGrid.rowCount, simulationShaderHash);
   simulation.initSceneAndMeshes();
   
   camera = new THREE.OrthographicCamera( 
@@ -123,9 +123,8 @@ function init() {
     // if (intersects.length > 0) {
     //   intersect.copy(intersects[0].uv);
     // }
-    console.log(mouse);
-    simulation.setSimUniform('mouse', mouse);
-    simulation.setSimUniform('mouse_magnitude', 1);
+    // console.log(mouse);
+    simulation.changeMousePosition(mouse);
   };
 }
 
@@ -146,7 +145,7 @@ function animate() {
   requestAnimationFrame( animate );
 
   simulation.ticktock();
-  
+  simulation.setSimUniform('mouse_magnitude', 0)
   renderer.render( scene, camera );
   // simulation.passThroughRender(simulation.getCurrentPositionTexture())
   stats.update();
