@@ -59,8 +59,7 @@ float get_next_position() {
 float calculate_mouse_impact(vec2 uv) {
   // We need to scale our distance depending on our height/width
   float mouse_distance = length(vec2(1, height/width) * vec2(mouse - uv));
-  return mouse_magnitude * 0.5 * max(sign(draw_radius - mouse_distance), 0.0);
-  
+  return mouse_magnitude * max(sign(draw_radius - mouse_distance), 0.0);
 }
 
 
@@ -69,5 +68,5 @@ void main() {
   float new_position = get_next_position();
   float mouse_impact = calculate_mouse_impact(vUv);
   float final_value = clamp(new_position + mouse_impact, 0., 1.);
-  gl_FragColor = vec4(final_value, cur_position, 0.0, 1.0);
+  gl_FragColor = vec4(final_value, cur_position, 1.0, 1.0);
 }

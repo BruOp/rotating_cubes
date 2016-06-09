@@ -40,11 +40,11 @@ function init() {
   renderer = new THREE.WebGLRenderer();
   renderer.setClearColor( 0x404040 );
   renderer.setPixelRatio( window.devicePixelRatio );
-  renderer.setSize( window.innerWidth, window.innerHeight );
+  renderer.setSize( width, height );
 
   // simulation = new Simulation(2 * boxGrid.columnCount, 2 * boxGrid.rowCount, simulationShaderHash);
   simulation = new Simulation(renderer, boxGrid.columnCount, boxGrid.rowCount, simulationShaderHash);
-  simulation.init();
+  simulation.initSceneAndMeshes();
   
   camera = new THREE.OrthographicCamera( 
     -.5 * width,
@@ -68,7 +68,7 @@ function init() {
   
   var material = new THREE.RawShaderMaterial( {
     uniforms: {
-      rotationField: { type: "t", value: simulation.getPositionTexture() },
+      rotationField: { type: "t", value: simulation.getCurrentPositionTexture() },
       map: { type: "t", value: texture },
       time: { type: "f", value: 0.0 },
       width: { type: "f", value: width },
@@ -85,15 +85,15 @@ function init() {
   
   //For debugging
   var plane = new THREE.PlaneGeometry(width/4,height/4,1,1);
-  var planeMaterial = new THREE.ShaderMaterial({
+  var planeMaterial = new THREE.RawShaderMaterial({
     uniforms: {
-      texture: { type: "t", value: simulation.getPositionTexture() }
+      texture: { type: "t", value: simulation.getCurrentPositionTexture() }
     },
     vertexShader: ShaderLoader.get('debug_vertex'),
     fragmentShader: ShaderLoader.get('debug_fragment'),
   });
   planeMesh = new THREE.Mesh( plane, planeMaterial );
-  planeMesh.position.z = 20;
+  planeMesh.position.z = 40;
   planeMesh.position.x = width/3;
   planeMesh.position.y = height/3;
   scene.add( planeMesh );
@@ -145,9 +145,9 @@ function animate() {
 
   requestAnimationFrame( animate );
 
-  simulation.update();
+  simulation.ticktock();
   
   renderer.render( scene, camera );
-  // simulation.passThroughRender(simulation.getPositionTexture())
+  // simulation.passThroughRender(simulation.getCurrentPositionTexture())
   stats.update();
 }
