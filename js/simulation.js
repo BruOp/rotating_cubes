@@ -1,9 +1,9 @@
 "use strict";
 
-function Simulation(width, height, shaderHash) {
-    //Setting constants
-    this.width = width;
-    this.height = height;
+function Simulation(renderer, simWidth, simHeight, shaderHash) {
+    this.renderer = renderer;
+    this.simWidth = simWidth;
+    this.simHeight = simHeight;
     this.shaderHash = shaderHash;
 
     this.setSimUniform = function(uniformName, newValue) {
@@ -18,28 +18,29 @@ function Simulation(width, height, shaderHash) {
         this.renderer.render(this.passThroughScene, this.orthoCamera, output);
       }
     };
+    
+    this.simulationRender = function(output) {
+      this.renderer.render( this.simulationScene, this.orthoCamera, output);
+    }
 
     this.update = function() {
       //render the particles at the new location
-      this.renderer.render( this.simulationScene, this.orthoCamera, this.rtPositionNew);
-      this.setSimUniform("position_texture", this.rtPositionNew.texture);
-      this.renderer.render( this.simulationScene, this.orthoCamera, this.rtPositionCur);
-      this.setSimUniform("position_texture", this.rtPositionCur.texture);
-      
+      this.simulationRender(this.rtPositionNew);
+      // this.setSimUniform("position_texture", this.rtPositionNew.texture);
+      // this.simulationRender(this.rtPositionCur);
+      // this.setSimUniform("position_texture", this.rtPositionCur.texture);
+      this.passThroughRender(this.rtPositionNew, this.rtPositionCur)
       this.setSimUniform('mouse_magnitude', 0.0);
     }
     
     this.getPositionTexture = function() {
-      return this.rtPositionCur.texture
+      return this.rtPositionCur.texture;
     }
     
     this.init = function() {
       this.raycaster = new THREE.Raycaster();
       this.intersect = new THREE.Vector2(0.5, 0.5);
       this.mouse = new THREE.Vector2();
-      
-      this.renderer = new THREE.WebGLRenderer();
-      this.renderer.setSize(this.width, this.height);
       
       var gl = this.renderer.getContext();
 
@@ -61,25 +62,25 @@ function Simulation(width, height, shaderHash) {
       });
 
       //5 the simulation:
-      //create a bi-unit quadrilateral and uses the simulation material to update the Float Texture
+      //create a bi-unit quadrilateral and uses the simulation material to update the Float texture
       var geom = SimulationUtilities.getBiUnitPlane();
       this.passThroughMesh = new THREE.Mesh(geom, passThroughMaterial);
       this.passThroughScene.add(this.passThroughMesh);
 
-      [this.rtPositionCur, this.rtPositionNew] = SimulationUtilities.getRenderTargets(this, this.width, this.height);
+      [this.rtPositionCur, this.rtPositionNew] = SimulationUtilities.getRenderTargets(this, this.simWidth, this.simHeight);
       
       var simulationMaterial = new THREE.ShaderMaterial({
         uniforms: {
           position_texture: { type: 't', value: this.rtPositionCur.texture },
           mouse: { type: "v2", value: this.intersect },
-          dx: { type: 'f', value: 1/this.width },
-          dy: { type: 'f', value: 1/this.height },
-          width: { type: 'f', value: this.width },
-          height: { type: 'f', value: this.height },
-          wave_speed: { type: 'f', value: 0.7 / Math.min(this.width, this.height) },
+          dx: { type: 'f', value: 1/this.simWidth },
+          dy: { type: 'f', value: 1/this.simHeight },
+          width: { type: 'f', value: this.simWidth },
+          height: { type: 'f', value: this.simHeight },
+          wave_speed: { type: 'f', value: 0.1 / Math.min(this.simWidth, this.simHeight) },
           damping_strength: { type: 'f', value: 0.005 },
           mouse_magnitude: { type: "f", value: 0.0 },
-          draw_radius: { type: "f", value: 10 / this.width }
+          draw_radius: { type: "f", value: 1 / this.simWidth }
         },
         vertexShader: this.shaderHash.simulation.vertex,
         fragmentShader: this.shaderHash.simulation.fragment

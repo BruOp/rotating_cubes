@@ -1,5 +1,5 @@
 "use strict";
-
+// Rename Utils
 var SimulationUtilities = function() {
   
   function setUniform(mesh, uniformName, newValue) {

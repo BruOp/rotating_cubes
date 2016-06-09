@@ -30,7 +30,8 @@ vec2 convertToRadians(vec2 rotations) {
   return 2. * M_PI * (rotations - vec2(.5, .5));
 }
 
-mat4 constructTransformationMatrix(vec2 angles, vec3 offset) {
+mat4 constructTransformationMatrix(vec2 rotation_angles, vec3 offset) {
+  vec2 angles = vec2(rotation_angles.x, rotation_angles.y)
   mat4 rotationMatrix;
   //The index here refers to the COLUMNS of the matrix
   rotationMatrix[0] = vec4(
@@ -62,7 +63,7 @@ void main() {
   
   vec2 screenUV = getScreenUV(offset);
   // We sample our rotation field by the cubes position from origin;
-  vec2 angles = convertToRadians(sin(time) * texture2D(rotationField, screenUV).rg);
+  vec2 angles = convertToRadians(texture2D(rotationField, screenUV).rg);
   mat4 rotationMatrix = constructTransformationMatrix(angles, offset);
   
   gl_Position = projectionMatrix * modelViewMatrix * rotationMatrix * vec4(position, 1.);

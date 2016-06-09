@@ -16,7 +16,7 @@ function calculateOffsets(width, height, boxGrid) {
             + Math.abs(Math.ceil(distanceFromCenterY)))
             * -boxGrid.boxLengthInPixels;
 
-    offsets.setXYZ( i, x, y, z );
+    offsets.setXYZ( i, x, y, 0 );
   }
   
   return offsets;
