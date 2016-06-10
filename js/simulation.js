@@ -12,8 +12,8 @@ function Simulation(renderer, width, height, shaderHash) {
         dy: { type: 'f', value: 1/this.height },
         width: { type: 'f', value: this.width },
         height: { type: 'f', value: this.height },
-        wave_speed: { type: 'f', value: 0.04 / Math.max(this.width, this.height) },
-        damping_strength: { type: 'f', value: 0.006 },
+        wave_speed: { type: 'f', value: 0.3 / Math.max(this.width, this.height) },
+        damping_strength: { type: 'f', value: 0.2 },
         mouse_magnitude: { type: "f", value: 0.0 },
         draw_radius: { type: "f", value: 2 / this.width }
       },

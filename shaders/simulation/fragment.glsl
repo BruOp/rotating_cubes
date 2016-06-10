@@ -1,3 +1,5 @@
+#define MIN_DISTANCE_FROM_ORIGIN 0.01
+
 precision highp float;
 
 varying vec2 vUv;
@@ -13,6 +15,10 @@ uniform float height;
 uniform vec2 mouse;
 
 uniform sampler2D position_texture;
+
+float when_gt(float x, float y) {
+  return max(sign(x - y), 0.0);
+}
 
 vec2 when_gt(vec2 x, vec2 y) {
   return max(sign(x - y), 0.0);
@@ -90,7 +96,7 @@ vec2 get_next_positions(vec2 cur_positions, vec2 old_positions) {
 vec2 calculate_mouse_impact(vec2 uv) {
   // We need to scale our distance depending on our height/width
   vec2 mouse_distances = vec2(-1, height/width) * vec2(mouse - uv);
-  return 0.05 * mouse_magnitude * max(sign(draw_radius - length(mouse_distances)), 0.0) * mouse_distances;
+  return 0.5 * mouse_magnitude * max(sign(draw_radius - length(mouse_distances)), 0.0) * mouse_distances;
 }
 
 
@@ -101,5 +107,6 @@ void main() {
   vec2 mouse_impact = calculate_mouse_impact(vUv);
   float final_phi_position   = clamp(new_positions.x + mouse_impact.y, 0., 1.);
   float final_theta_position = clamp(new_positions.y + mouse_impact.x, 0., 1.);
+  //Discard values that are less than min amount
   gl_FragColor = vec4(final_phi_position, final_theta_position, cur_positions.x, cur_positions.y);
 }
