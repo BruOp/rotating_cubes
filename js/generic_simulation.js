@@ -68,7 +68,7 @@ GenericSimulation.prototype = {
       arr[i] = 0.5;
       arr[i+1] = 0.5;
       arr[i+2] = 0.5;
-      arr[i+3] = 1.0;
+      arr[i+3] = 0.5;
     }
     var texture = new THREE.DataTexture(arr, this.width, this.height, THREE.RGBAFormat, THREE.FloatType, THREE.UVMapping);
     texture.needsUpdate = true;

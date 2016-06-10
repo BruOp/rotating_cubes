@@ -13,9 +13,9 @@ function Simulation(renderer, width, height, shaderHash) {
         width: { type: 'f', value: this.width },
         height: { type: 'f', value: this.height },
         wave_speed: { type: 'f', value: 0.05 / Math.max(this.width, this.height) },
-        damping_strength: { type: 'f', value: 0.01 },
+        damping_strength: { type: 'f', value: 0.001 },
         mouse_magnitude: { type: "f", value: 0.0 },
-        draw_radius: { type: "f", value: 1 / this.width }
+        draw_radius: { type: "f", value: 2 / this.width }
       },
       vertexShader: this.shaderHash.simulation.vertex,
       fragmentShader: this.shaderHash.simulation.fragment

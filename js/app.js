@@ -75,8 +75,7 @@ function init() {
       height: { type: "f", value: height }
     },
     vertexShader: ShaderLoader.get('cube_vertex'),
-    fragmentShader: ShaderLoader.get('cube_fragment'),
-    transparent: false
+    fragmentShader: ShaderLoader.get('cube_fragment')
   } );
 
   mesh = new THREE.Mesh( geometry, material );
@@ -91,6 +90,7 @@ function init() {
     },
     vertexShader: ShaderLoader.get('debug_vertex'),
     fragmentShader: ShaderLoader.get('debug_fragment'),
+    transparent: true
   });
   planeMesh = new THREE.Mesh( plane, planeMaterial );
   planeMesh.position.z = 40;

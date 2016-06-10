@@ -36,7 +36,7 @@ vec2 getScreenUV(vec3 offset) {
 
 vec2 convertToRadians(vec2 rotations) {
   // We expect 'rotation' to be normalized from 0 to 1.
-  return 4. * M_PI * (rotations - vec2(.5, .5));
+  return 2. * M_PI * (rotations - vec2(.5, .5));
 }
 
 mat4 constructTransformationMatrix(vec2 angles, vec3 offset) {
@@ -76,5 +76,4 @@ void main() {
   mat4 rotationMatrix = constructTransformationMatrix(angles, offset);
   
   gl_Position = projectionMatrix * modelViewMatrix * rotationMatrix * vec4(position, 1.);
-
 }
