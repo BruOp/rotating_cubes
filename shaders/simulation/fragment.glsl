@@ -33,9 +33,9 @@ vec4 get_texture_values(vec2 tex_coords) {
 vec2 get_current_values(vec2 uv, vec2 is_in_bounds) {
   // Return the texture value at point uv, or if uv is out of bounds,
   // then return 0.5 for both values.
-  vec2 origin_vals = vec2(0.5, 0.5);
-  return (self_product(is_in_bounds) * (get_texture_values(uv).rg - origin_vals))
-          + origin_vals;
+  vec2 origin = vec2(0.5, 0.5);
+  return self_product(is_in_bounds) * (get_texture_values(uv).rg - origin)
+          + origin;
 }
 
 vec2 fd_central(vec2 left, vec2 center, vec2 right, float dx) {
@@ -48,7 +48,7 @@ vec2 get_derivs(vec2 centers, vec2 offset, float dx, vec2 left_bounds, vec2 righ
   vec2 left_in_bounds  = when_gt(vec2(left_uv),  left_bounds);
   vec2 right_in_bounds = when_lt(vec2(right_uv), right_bounds);
   vec2 left   = get_current_values(left_uv, left_in_bounds);
-  vec2 right  = get_current_values(left_uv, left_in_bounds);
+  vec2 right  = get_current_values(right_uv, right_in_bounds);
   return fd_central(left, centers, right, dx);
 }
 
