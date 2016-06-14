@@ -2,7 +2,7 @@
 
 var container, stats;
 
-var camera, scene, renderer, mesh, simulation, planeMesh;
+var camera, scene, renderer, mesh, simulation, scroller, planeMesh;
 
 window.onload = function() {
   var shaderLoader = new ShaderLoader();
@@ -11,6 +11,8 @@ window.onload = function() {
     passthrough_fragment: "passthrough/fragment",
     simulation_vertex: "simulation/vertex",
     simulation_fragment : "simulation/fragment",
+    scrolling_vertex: "scrolling/vertex",
+    scrolling_fragment: "scrolling/fragment",
     cube_vertex: "cubes/vertex",
     cube_fragment: "cubes/fragment",
     debug_vertex: "debug/vertex",
@@ -32,6 +34,11 @@ function init() {
     }
   };
   
+  var scrollingShaderHash = {
+    vertex:   ShaderLoader.get('scrolling_vertex'),
+    fragment: ShaderLoader.get('scrolling_fragment')
+  };
+  
   container = document.getElementById( 'container' );
   
   var boxGrid = new InstancedBoxGridGeometry(width, height);
@@ -45,6 +52,9 @@ function init() {
   // simulation = new Simulation(2 * boxGrid.columnCount, 2 * boxGrid.rowCount, simulationShaderHash);
   simulation = new Simulation(renderer, 2 * boxGrid.columnCount, 2 * boxGrid.rowCount, simulationShaderHash);
   simulation.initSceneAndMeshes();
+  
+  scroller = new Scroller(renderer, 4 * boxGrid.columnCount, 4 * boxGrid.rowCount, scrollingShaderHash);
+  scroller.initSceneAndMesh();
   
   camera = new THREE.OrthographicCamera( 
     -.5 * width,
@@ -61,14 +71,13 @@ function init() {
   var geometry = boxGrid.geometry;
 
   // material
-  var rotationField = new THREE.TextureLoader().load( 'textures/rotationField.png' );
-  var texture = new THREE.TextureLoader().load( 'textures/cubeMap.png' );
+  var texture = new THREE.TextureLoader().load( 'textures/cubeMap2.png' );
   texture.magFilter = THREE.NearestFilter;
 	texture.minFilter = THREE.NearestFilter;
   
   var material = new THREE.RawShaderMaterial( {
     uniforms: {
-      rotationField: { type: "t", value: simulation.getCurrentPositionTexture() },
+      rotationField: { type: "t", value: scroller.getCurrentPositionTexture() },
       map: { type: "t", value: texture },
       time: { type: "f", value: 0.0 },
       width: { type: "f", value: width },
@@ -86,7 +95,7 @@ function init() {
   var plane = new THREE.PlaneGeometry(width/4,height/4,1,1);
   var planeMaterial = new THREE.RawShaderMaterial({
     uniforms: {
-      texture: { type: "t", value: simulation.getCurrentPositionTexture() }
+      texture: { type: "t", value: scroller.getCurrentPositionTexture() }
     },
     vertexShader: ShaderLoader.get('debug_vertex'),
     fragmentShader: ShaderLoader.get('debug_fragment'),
@@ -105,8 +114,10 @@ function init() {
   // 
   // window.addEventListener( 'resize', onWindowResize, false );
   
-  renderer.domElement.addEventListener('mousemove', onMouseClick);
+  // renderer.domElement.addEventListener('mousemove', onMouseClick);
   // simulation.renderer.domElement.addEventListener('click', onMouseClick);
+  
+  window.addEventListener('scroll', onMouseScroll);
   
   if ( renderer.extensions.get( 'ANGLE_instanced_arrays' ) === false ) {
     alert( "You are missing support for 'ANGLE_instanced_arrays'" );
@@ -117,14 +128,12 @@ function init() {
   
   function onMouseClick(event) {
     var mouse = new THREE.Vector2(event.offsetX / width, 1 - (event.offsetY / height));
-    // raycaster.setFromCamera(mouse, orthoCamera);
-    // 
-    // var intersects = raycaster.intersectObjects(scene.children);
-    // if (intersects.length > 0) {
-    //   intersect.copy(intersects[0].uv);
-    // }
-    // console.log(mouse);
     simulation.changeMousePosition(mouse);
+  };
+  
+  function onMouseScroll(event) {
+    var scrollPosition = document.body.scrollTop / document.body.scrollHeight;
+    scroller.setScrollPosition(scrollPosition);
   };
 }
 
@@ -144,8 +153,9 @@ function animate() {
 
   requestAnimationFrame( animate );
 
-  simulation.ticktock();
-  simulation.setSimUniform('mouse_magnitude', 0)
+  // simulation.ticktock();
+  // simulation.setSimUniform('mouse_magnitude', 0)
+  scroller.update();
   renderer.render( scene, camera );
   // simulation.passThroughRender(simulation.getCurrentPositionTexture())
   stats.update();

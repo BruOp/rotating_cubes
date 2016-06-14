@@ -13,19 +13,19 @@ function Simulation(renderer, width, height, shaderHash) {
         width: { type: 'f', value: this.width },
         height: { type: 'f', value: this.height },
         wave_speed: { type: 'f', value: 0.3 / Math.max(this.width, this.height) },
-        damping_strength: { type: 'f', value: 0.2 },
+        damping_strength: { type: 'f', value: 0.02 },
         mouse_magnitude: { type: "f", value: 0.0 },
         draw_radius: { type: "f", value: 2 / this.width }
       },
       vertexShader: this.shaderHash.simulation.vertex,
       fragmentShader: this.shaderHash.simulation.fragment
     });
-  },
+  };
   
   this.changeMousePosition = function(mouse) {
     simulation.setSimUniform('mouse', mouse);
     simulation.setSimUniform('mouse_magnitude', 1);
-  }
+  };
 };
 
 Simulation.prototype = Object.create(GenericSimulation.prototype);
