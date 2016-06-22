@@ -35,8 +35,14 @@ function init() {
   };
   
   var scrollingShaderHash = {
-    vertex:   ShaderLoader.get('scrolling_vertex'),
-    fragment: ShaderLoader.get('scrolling_fragment')
+    scrolling: {
+      vertex:   ShaderLoader.get('scrolling_vertex'),
+      fragment: ShaderLoader.get('scrolling_fragment')
+    },
+    passThrough: {
+      vertex: ShaderLoader.get('passthrough_vertex'),
+      fragment: ShaderLoader.get('passthrough_fragment')
+    }
   };
   
   container = document.getElementById( 'container' );
@@ -54,7 +60,7 @@ function init() {
   simulation.initSceneAndMeshes();
   
   scroller = new Scroller(renderer, 4 * boxGrid.columnCount, 4 * boxGrid.rowCount, scrollingShaderHash);
-  scroller.initSceneAndMesh();
+  scroller.initSceneAndMeshes();
   
   camera = new THREE.OrthographicCamera( 
     -.5 * width,
@@ -77,7 +83,7 @@ function init() {
   
   var material = new THREE.RawShaderMaterial( {
     uniforms: {
-      rotationField: { type: "t", value: simulation.getCurrentPositionTexture() },
+      rotationField: { type: "t", value: scroller.getCurrentPositionTexture() },
       map: { type: "t", value: texture },
       time: { type: "f", value: 0.0 },
       width: { type: "f", value: width },
@@ -95,7 +101,7 @@ function init() {
   var plane = new THREE.PlaneGeometry(width/4,height/4,1,1);
   var planeMaterial = new THREE.RawShaderMaterial({
     uniforms: {
-      texture: { type: "t", value: simulation.getCurrentPositionTexture() }
+      texture: { type: "t", value: scroller.getCurrentPositionTexture() }
     },
     vertexShader: ShaderLoader.get('debug_vertex'),
     fragmentShader: ShaderLoader.get('debug_fragment'),

@@ -1,136 +1,96 @@
-#define M_PI 3.1415926535897932384626433832795
+#define MIN_DISTANCE_FROM_ORIGIN 0.01
 
 precision highp float;
 
-uniform sampler2D texture;
-uniform float num_of_scenes; // N
-uniform float current_top; // From 0 to (N-1) / N;
-uniform vec2 dimensions;
-uniform float time;
+varying vec2 vUv;
 
-//
-// Description : Array and textureless GLSL 2D/3D/4D simplex 
-//               noise functions.
-//      Author : Ian McEwan, Ashima Arts.
-//  Maintainer : stegu
-//     Lastmod : 20110822 (ijm)
-//     License : Copyright (C) 2011 Ashima Arts. All rights reserved.
-//               Distributed under the MIT License. See LICENSE file.
-//               https://github.com/ashima/webgl-noise
-//               https://github.com/stegu/webgl-noise
-// 
+uniform float wave_speed;
+uniform float damping_strength;
+uniform float dx;
+uniform float dy;
+uniform float width;
+uniform float height;
+uniform float scroll_position;
+uniform float scroll_value;
 
-vec3 mod289(vec3 x) {
-  return x - floor(x * (1.0 / 289.0)) * 289.0;
+uniform sampler2D position_texture;
+
+float when_gt(float x, float y) {
+  return max(sign(x - y), 0.0);
 }
 
-vec4 mod289(vec4 x) {
-  return x - floor(x * (1.0 / 289.0)) * 289.0;
+vec2 when_gt(vec2 x, vec2 y) {
+  return max(sign(x - y), 0.0);
 }
 
-vec4 permute(vec4 x) {
-     return mod289(((x*34.0)+1.0)*x);
+vec2 when_lt(vec2 x, vec2 y) {
+  return max(sign(y - x), 0.0);
 }
 
-vec4 taylorInvSqrt(vec4 r)
-{
-  return 1.79284291400159 - 0.85373472095314 * r;
+vec4 get_texture_values(vec2 tex_coords) {
+  return texture2D(position_texture, tex_coords);
 }
 
-float snoise(vec3 v)
-  { 
-  const vec2  C = vec2(1.0/6.0, 1.0/3.0) ;
-  const vec4  D = vec4(0.0, 0.5, 1.0, 2.0);
-
-// First corner
-  vec3 i  = floor(v + dot(v, C.yyy) );
-  vec3 x0 =   v - i + dot(i, C.xxx) ;
-
-// Other corners
-  vec3 g = step(x0.yzx, x0.xyz);
-  vec3 l = 1.0 - g;
-  vec3 i1 = min( g.xyz, l.zxy );
-  vec3 i2 = max( g.xyz, l.zxy );
-
-  //   x0 = x0 - 0.0 + 0.0 * C.xxx;
-  //   x1 = x0 - i1  + 1.0 * C.xxx;
-  //   x2 = x0 - i2  + 2.0 * C.xxx;
-  //   x3 = x0 - 1.0 + 3.0 * C.xxx;
-  vec3 x1 = x0 - i1 + C.xxx;
-  vec3 x2 = x0 - i2 + C.yyy; // 2.0*C.x = 1/3 = C.y
-  vec3 x3 = x0 - D.yyy;      // -1.0+3.0*C.x = -0.5 = -D.y
-
-// Permutations
-  i = mod289(i); 
-  vec4 p = permute( permute( permute( 
-             i.z + vec4(0.0, i1.z, i2.z, 1.0 ))
-           + i.y + vec4(0.0, i1.y, i2.y, 1.0 )) 
-           + i.x + vec4(0.0, i1.x, i2.x, 1.0 ));
-
-// Gradients: 7x7 points over a square, mapped onto an octahedron.
-// The ring size 17*17 = 289 is close to a multiple of 49 (49*6 = 294)
-  float n_ = 0.142857142857; // 1.0/7.0
-  vec3  ns = n_ * D.wyz - D.xzx;
-
-  vec4 j = p - 49.0 * floor(p * ns.z * ns.z);  //  mod(p,7*7)
-
-  vec4 x_ = floor(j * ns.z);
-  vec4 y_ = floor(j - 7.0 * x_ );    // mod(j,N)
-
-  vec4 x = x_ *ns.x + ns.yyyy;
-  vec4 y = y_ *ns.x + ns.yyyy;
-  vec4 h = 1.0 - abs(x) - abs(y);
-
-  vec4 b0 = vec4( x.xy, y.xy );
-  vec4 b1 = vec4( x.zw, y.zw );
-
-  //vec4 s0 = vec4(lessThan(b0,0.0))*2.0 - 1.0;
-  //vec4 s1 = vec4(lessThan(b1,0.0))*2.0 - 1.0;
-  vec4 s0 = floor(b0)*2.0 + 1.0;
-  vec4 s1 = floor(b1)*2.0 + 1.0;
-  vec4 sh = -step(h, vec4(0.0));
-
-  vec4 a0 = b0.xzyw + s0.xzyw*sh.xxyy ;
-  vec4 a1 = b1.xzyw + s1.xzyw*sh.zzww ;
-
-  vec3 p0 = vec3(a0.xy,h.x);
-  vec3 p1 = vec3(a0.zw,h.y);
-  vec3 p2 = vec3(a1.xy,h.z);
-  vec3 p3 = vec3(a1.zw,h.w);
-
-//Normalise gradients
-  vec4 norm = taylorInvSqrt(vec4(dot(p0,p0), dot(p1,p1), dot(p2, p2), dot(p3,p3)));
-  p0 *= norm.x;
-  p1 *= norm.y;
-  p2 *= norm.z;
-  p3 *= norm.w;
-
-// Mix final noise value
-  vec4 m = max(0.6 - vec4(dot(x0,x0), dot(x1,x1), dot(x2,x2), dot(x3,x3)), 0.0);
-  m = m * m;
-  return 42.0 * dot( m*m, vec4( dot(p0,x0), dot(p1,x1), 
-                                dot(p2,x2), dot(p3,x3) ) );
+vec2 get_current_values(vec2 uv) {
+  return get_texture_values(uv).rg;
 }
 
-vec2 get_screen_uv() {
-  return gl_FragCoord.xy / dimensions;
+vec2 fd_central(vec2 left, vec2 center, vec2 right, float dx) {
+  return (right + left - (2.0 * center)) * pow(dx, -2.);
 }
 
-vec2 get_uv_coords() {
-  float scene_scaling = 1. / (num_of_scenes + 1.);
-  vec2 uv = get_screen_uv();
-  return vec2(uv.x, scene_scaling * uv.y  - current_top - scene_scaling);
+vec2 get_derivs(vec2 centers, vec2 offset, float dx) {
+  vec2 left_uv  = clamp(vUv - offset, 0., 1.);
+  vec2 right_uv = clamp(vUv + offset, 0., 1.);
+  vec2 left   = get_current_values(left_uv);
+  vec2 right  = get_current_values(right_uv);
+  return fd_central(left, centers, right, dx);
 }
 
-vec2 calculateRotationValues(vec2 uv) {
-  float texture_value = texture2D( texture, get_uv_coords() ).r;
-  float modulation = pow(abs(sin(2. * M_PI * texture_value)), 1.0);
-  float is_high_enough = step(0.1, modulation);
-  float noise = 0.5 * is_high_enough * modulation * (snoise(vec3(2.5 * get_uv_coords(), time) - 0.5)) ;
-  return vec2(noise * 0.3 + texture_value  + (1./256.), noise * 0.4 + 0.5);
+vec2 get_x_derivs(vec2 centers) {
+  return get_derivs(centers, vec2(dx, 0.), dx);
 }
 
-void main()	{
-  vec2 rotationValues = calculateRotationValues(get_uv_coords());
-	gl_FragColor = vec4(rotationValues, rotationValues);
+vec2 get_y_derivs(vec2 centers) {
+  return get_derivs(centers, vec2(0., dy), dy);
+}
+
+float calculate_wave_equation(float cur_position, float old_position, vec2 gradient) {
+  vec2 wave_speeds = pow(wave_speed, 2.) * vec2(pow(height/width, 2.), 1.);
+  float damping_factor = 1. / (1. + damping_strength);
+  return damping_factor * (
+      (damping_strength - 1.) * old_position
+      + 2. * cur_position
+      + dot(wave_speeds, gradient));
+}
+
+vec2 get_next_positions(vec2 cur_positions, vec2 old_positions) {
+  vec2 x_derivs = get_x_derivs(cur_positions);
+  vec2 y_derivs = get_y_derivs(cur_positions);
+  vec2 phi_gradient = vec2(x_derivs.x, y_derivs.x);
+  vec2 theta_gradient = vec2(x_derivs.y, y_derivs.y);
+  
+  return vec2(
+    calculate_wave_equation(cur_positions.x, old_positions.x, phi_gradient),
+    calculate_wave_equation(cur_positions.y, old_positions.y, theta_gradient)
+  );
+}
+
+bool outsideScrollZone(vec2 uv) {
+  return length(uv - vec2(0.,1.)) > scroll_position;
+}
+
+void main() {
+  vec2 cur_positions = get_texture_values(vUv).rg;
+  vec2 old_positions = get_texture_values(vUv).ba;
+  vec2 new_positions;
+  //if it's outside our scroll zone
+  if (outsideScrollZone(vUv)) {
+    new_positions = get_next_positions(cur_positions, old_positions);
+  } else {  //if it's inside our scroll zone
+    new_positions = vec2(0.85, 0.85);
+  }  
+  new_positions = clamp(new_positions, 0., 1.);
+  //Discard values that are less than min amount
+  gl_FragColor = vec4(new_positions, cur_positions);
 }
