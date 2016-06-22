@@ -76,7 +76,7 @@ mat4 constructTransformationMatrix(vec2 angles, vec3 offset, vec2 screenUV) {
     0
   );
   rotationMatrix[3] = vec4(offset, 1);
-  
+
   return rotationMatrix;
 }
 

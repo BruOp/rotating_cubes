@@ -77,7 +77,7 @@ function init() {
   
   var material = new THREE.RawShaderMaterial( {
     uniforms: {
-      rotationField: { type: "t", value: scroller.getCurrentPositionTexture() },
+      rotationField: { type: "t", value: simulation.getCurrentPositionTexture() },
       map: { type: "t", value: texture },
       time: { type: "f", value: 0.0 },
       width: { type: "f", value: width },
@@ -95,7 +95,7 @@ function init() {
   var plane = new THREE.PlaneGeometry(width/4,height/4,1,1);
   var planeMaterial = new THREE.RawShaderMaterial({
     uniforms: {
-      texture: { type: "t", value: scroller.getCurrentPositionTexture() }
+      texture: { type: "t", value: simulation.getCurrentPositionTexture() }
     },
     vertexShader: ShaderLoader.get('debug_vertex'),
     fragmentShader: ShaderLoader.get('debug_fragment'),
@@ -114,7 +114,7 @@ function init() {
   // 
   // window.addEventListener( 'resize', onWindowResize, false );
   
-  // renderer.domElement.addEventListener('mousemove', onMouseClick);
+  renderer.domElement.addEventListener('mousemove', onMouseClick);
   // simulation.renderer.domElement.addEventListener('click', onMouseClick);
   
   window.addEventListener('scroll', onMouseScroll);
@@ -153,8 +153,8 @@ function animate() {
 
   requestAnimationFrame( animate );
 
-  // simulation.ticktock();
-  // simulation.setSimUniform('mouse_magnitude', 0)
+  simulation.ticktock();
+  simulation.setSimUniform('mouse_magnitude', 0)
   scroller.update();
   renderer.render( scene, camera );
   // simulation.passThroughRender(simulation.getCurrentPositionTexture())
