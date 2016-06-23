@@ -2,7 +2,17 @@
 
 var container, stats;
 
-var camera, scene, renderer, mesh, simulation, scroller, planeMesh;
+var camera, scene, renderer, mesh, simulation, scroller, planeMesh, boxGrid;
+
+var scrollDuration, isScrolling;
+
+var scenes = [
+  { final_scroll_value: 0.5 },
+  { final_scroll_value: 1.0 },
+  { final_scroll_value: 0.5 },
+];
+
+var sceneIndex = 0;
 
 window.onload = function() {
   var shaderLoader = new ShaderLoader();
@@ -15,6 +25,8 @@ window.onload = function() {
     scrolling_fragment: "scrolling/fragment",
     cube_vertex: "cubes/vertex",
     cube_fragment: "cubes/fragment",
+    scrolling_cube_vertex: "scrolling_cubes/vertex",
+    scrolling_cube_fragment: "scrolling_cubes/fragment",
     debug_vertex: "debug/vertex",
     debug_fragment: "debug/fragment"
   }, "shaders/", init );
@@ -47,39 +59,42 @@ function init() {
   
   container = document.getElementById( 'container' );
   
-  var boxGrid = new InstancedBoxGridGeometry(width, height);
+  boxGrid = new InstancedBoxGridGeometry(width, height);
   
-  
-  renderer = new THREE.WebGLRenderer();
-  renderer.setClearColor( 0x404040 );
+  renderer = new THREE.WebGLRenderer({ antialias: false });
+  renderer.setClearColor( 0xffffff );
   renderer.setPixelRatio( window.devicePixelRatio );
   renderer.setSize( width, height );
+  // renderer.setFaceCulling(false, "cw")
 
   // simulation = new Simulation(2 * boxGrid.columnCount, 2 * boxGrid.rowCount, simulationShaderHash);
   simulation = new Simulation(renderer, 2 * boxGrid.columnCount, 2 * boxGrid.rowCount, simulationShaderHash);
   simulation.initSceneAndMeshes();
   
-  scroller = new Scroller(renderer, 4 * boxGrid.columnCount, 4 * boxGrid.rowCount, scrollingShaderHash);
+  scroller = new Scroller(renderer, boxGrid.columnCount, boxGrid.rowCount, scrollingShaderHash);
   scroller.initSceneAndMeshes();
   
   camera = new THREE.OrthographicCamera( 
-    -.5 * width,
-    .5 * width,
-    .5 * height,
-    -.5 * height,
+    0.99 * -.5 * width,
+    0.99 *  .5 * width,
+    0.99 *  .5 * height,
+    0.99 * -.5 * height,
     1,
     boxGrid.boxLengthInPixels * (boxGrid.columnCount + boxGrid.rowCount + 2) );
   
-  camera.position.z = boxGrid.boxLengthInPixels * 2;
+  // camera = new THREE.PerspectiveCamera(60, width/height, 1, boxGrid.boxLengthInPixels * (boxGrid.columnCount + boxGrid.rowCount + 2))
+  camera.position.z = boxGrid.boxLengthInPixels * boxGrid.rowCount;
   
   scene = new THREE.Scene();
 
   var geometry = boxGrid.geometry;
 
   // material
-  var texture = new THREE.TextureLoader().load( 'textures/cubeMap2.png' );
+  var texture = new THREE.TextureLoader().load( 'textures/cubeMap3.png' );
   texture.magFilter = THREE.NearestFilter;
 	texture.minFilter = THREE.NearestFilter;
+  texture.anisotropy = 1;
+	texture.generateMipmaps = false;
   
   var material = new THREE.RawShaderMaterial( {
     uniforms: {
@@ -87,11 +102,14 @@ function init() {
       map: { type: "t", value: texture },
       time: { type: "f", value: 0.0 },
       width: { type: "f", value: width },
-      height: { type: "f", value: height }
+      height: { type: "f", value: height },
+      scroll_origin: { type: 'v2', value: new THREE.Vector2(0.5, 0.) }
     },
-    vertexShader: ShaderLoader.get('cube_vertex'),
-    fragmentShader: ShaderLoader.get('cube_fragment')
+    vertexShader: ShaderLoader.get('scrolling_cube_vertex'),
+    fragmentShader: ShaderLoader.get('scrolling_cube_fragment')
   } );
+  
+  material.side = THREE.FrontSide;
 
   mesh = new THREE.Mesh( geometry, material );
   scene.add( mesh );
@@ -108,7 +126,7 @@ function init() {
     transparent: true
   });
   planeMesh = new THREE.Mesh( plane, planeMaterial );
-  planeMesh.position.z = 40;
+  planeMesh.position.z = 2 * boxGrid.boxLengthInPixels;
   planeMesh.position.x = width/3;
   planeMesh.position.y = height/3;
   scene.add( planeMesh );
@@ -120,31 +138,69 @@ function init() {
   // 
   // window.addEventListener( 'resize', onWindowResize, false );
   
-  renderer.domElement.addEventListener('mousemove', onMouseClick);
-  // simulation.renderer.domElement.addEventListener('click', onMouseClick);
+  renderer.domElement.addEventListener('click', onMouseClick);
   
-  window.addEventListener('scroll', onMouseScroll);
+  window.addEventListener('mousewheel', onMouseScroll);
   
   if ( renderer.extensions.get( 'ANGLE_instanced_arrays' ) === false ) {
     alert( "You are missing support for 'ANGLE_instanced_arrays'" );
     return;
   }
   
+  scrollDuration = 2.0;
+  // enableScrolling();
+  
   animate();
   
   function onMouseClick(event) {
     var mouse = new THREE.Vector2(event.offsetX / width, 1 - (event.offsetY / height));
-    simulation.changeMousePosition(mouse);
+    mesh.material.uniforms.scroll_origin.value = mouse;
+    scroller.setSimUniform('scroll_origin', mouse);
   };
   
   function onMouseScroll(event) {
-    var scrollPosition = document.body.scrollTop / document.body.scrollHeight;
-    scroller.setScrollPosition(scrollPosition);
+    if (!isScrolling) {
+      var scrollDelta = Math.sign(event.deltaY);
+      if (canScroll(scrollDelta)) scroll(scrollDelta);
+      console.log(sceneIndex);  
+    }
   };
+  
+  function setScrollPosition(scrollPosition) {
+    scroller.setSimUniform('scroll_position', scrollPosition);
+  }
+}
+
+function canScroll(scrollDelta) {
+  return (scrollDelta > 0 && sceneIndex < scenes.length - 1) || (scrollDelta < 0 && sceneIndex > 0);
+}
+
+function scroll(scrollDelta) {
+  sceneIndex += scrollDelta;
+  scroller.setFinalScrollValue(scenes[sceneIndex].final_scroll_value);
+  setScrollOrigin(scrollDelta);
+  enableScrolling();
+}
+
+function setScrollOrigin(scrollDelta) {
+  var scrollOriginY = 1 / boxGrid.rowCount;
+  if (scrollDelta < 0)
+    scrollOriginY = 1 - 1 / boxGrid.rowCount;
+  var scrollOrigin = new THREE.Vector2(0.5, scrollOriginY);
+  mesh.material.uniforms.scroll_origin.value = scrollOrigin;
+  scroller.setSimUniform('scroll_origin', scrollOrigin);
+}
+
+function enableScrolling() {
+  isScrolling = true;
+}
+
+function disableScrolling() {
+  scroller.setSimUniform('scroll_position', 0)
+  isScrolling = false;
 }
 
 function onWindowResize( event ) {
-  
   camera.left  = -.5 * window.innerWidth;
   camera.right = .5 * window.innerWidth;
   camera.top = .5 * window.innerHeight;
@@ -152,7 +208,6 @@ function onWindowResize( event ) {
   camera.updateProjectionMatrix();
 
   renderer.setSize( window.innerWidth, window.innerHeight );
-
 }
 
 function animate() {
@@ -163,6 +218,11 @@ function animate() {
   simulation.setSimUniform('mouse_magnitude', 0)
   scroller.update();
   renderer.render( scene, camera );
-  // simulation.passThroughRender(simulation.getCurrentPositionTexture())
+  
+  if (isScrolling) {
+    var scrollPosition = scroller.getSimUniform('scroll_position') + 1 / scrollDuration / 60;
+    scroller.setSimUniform('scroll_position', scrollPosition);
+  }
+  if (scroller.getSimUniform('scroll_position') > 1.5) disableScrolling();
   stats.update();
 }

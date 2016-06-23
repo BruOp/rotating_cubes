@@ -9,14 +9,14 @@ function calculateOffsets(width, height, boxGrid) {
     var distanceFromCenterX = columnIndex - (.5 * boxGrid.columnCount);
     var distanceFromCenterY = rowIndex - (.5 * boxGrid.rowCount);
     
-    var distanceScalingFactor = 0.99; //This is just to prevent 1px artefacts between boxes
+    var distanceScalingFactor = 1.; //This is just to prevent 1px artefacts between boxes
     var x = distanceScalingFactor * width  * (dx * (distanceFromCenterX + 0.5));
     var y = distanceScalingFactor * height * (dy * (distanceFromCenterY + 0.5));
     var z = ( Math.abs(Math.ceil(distanceFromCenterX)) 
             + Math.abs(Math.ceil(distanceFromCenterY)))
             * -boxGrid.boxLengthInPixels;
 
-    offsets.setXYZ( i, x, y, 0 );
+    offsets.setXYZ( i, x, y, z );
   }
   
   return offsets;
