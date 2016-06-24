@@ -2,7 +2,7 @@
 
 var container, stats;
 
-var camera, scene, renderer, mesh, simulation, scroller, planeMesh, boxGrid;
+var camera, scene, renderer, mesh, simulation, scroller, planeMesh, boxGrid, meshUniforms;
 
 var scrollDuration, isScrolling;
 
@@ -63,9 +63,8 @@ function init() {
   
   renderer = new THREE.WebGLRenderer({ antialias: false });
   renderer.setClearColor( 0xffffff );
-  renderer.setPixelRatio( window.devicePixelRatio );
+  // renderer.setPixelRatio( window.devicePixelRatio );
   renderer.setSize( width, height );
-  // renderer.setFaceCulling(false, "cw")
 
   // simulation = new Simulation(2 * boxGrid.columnCount, 2 * boxGrid.rowCount, simulationShaderHash);
   simulation = new Simulation(renderer, 2 * boxGrid.columnCount, 2 * boxGrid.rowCount, simulationShaderHash);
@@ -73,6 +72,8 @@ function init() {
   
   scroller = new Scroller(renderer, boxGrid.columnCount, boxGrid.rowCount, scrollingShaderHash);
   scroller.initSceneAndMeshes();
+  
+  console.log(width, height)
   
   camera = new THREE.OrthographicCamera( 
     0.99 * -.5 * width,
@@ -96,15 +97,17 @@ function init() {
   texture.anisotropy = 1;
 	texture.generateMipmaps = false;
   
+  meshUniforms = {
+    rotationField: { type: "t", value: scroller.getCurrentPositionTexture() },
+    map: { type: "t", value: texture },
+    time: { type: "f", value: 0.0 },
+    width: { type: "f", value: width },
+    height: { type: "f", value: height },
+    scroll_origin: { type: 'v2', value: new THREE.Vector2(0.5, 0.) }
+  };
+  
   var material = new THREE.RawShaderMaterial( {
-    uniforms: {
-      rotationField: { type: "t", value: scroller.getCurrentPositionTexture() },
-      map: { type: "t", value: texture },
-      time: { type: "f", value: 0.0 },
-      width: { type: "f", value: width },
-      height: { type: "f", value: height },
-      scroll_origin: { type: 'v2', value: new THREE.Vector2(0.5, 0.) }
-    },
+    uniforms: meshUniforms,
     vertexShader: ShaderLoader.get('scrolling_cube_vertex'),
     fragmentShader: ShaderLoader.get('scrolling_cube_fragment')
   } );
@@ -135,8 +138,8 @@ function init() {
   
   stats = new Stats();
   container.appendChild( stats.dom );
-  // 
-  // window.addEventListener( 'resize', onWindowResize, false );
+
+  window.addEventListener( 'resize', onWindowResize, false );
   
   renderer.domElement.addEventListener('click', onMouseClick);
   
@@ -147,9 +150,10 @@ function init() {
     return;
   }
   
-  scrollDuration = 2.0;
+  scrollDuration = 1.0;
   // enableScrolling();
   
+  setUpGui();
   animate();
   
   function onMouseClick(event) {
@@ -169,6 +173,12 @@ function init() {
   function setScrollPosition(scrollPosition) {
     scroller.setSimUniform('scroll_position', scrollPosition);
   }
+}
+
+function setUpGui() {
+  var gui = new dat.GUI();
+  scroller.addGuiFolder(gui);
+  simulation.addGuiFolder(gui);
 }
 
 function canScroll(scrollDelta) {
@@ -201,11 +211,11 @@ function disableScrolling() {
 }
 
 function onWindowResize( event ) {
-  camera.left  = -.5 * window.innerWidth;
-  camera.right = .5 * window.innerWidth;
-  camera.top = .5 * window.innerHeight;
-  camera.bottom = -.5 * window.innerHeight;
-  camera.updateProjectionMatrix();
+  // camera.left  = -.5 * window.innerWidth;
+  // camera.right = .5 * window.innerWidth;
+  // camera.top = .5 * window.innerHeight;
+  // camera.bottom = -.5 * window.innerHeight;
+  // camera.updateProjectionMatrix();
 
   renderer.setSize( window.innerWidth, window.innerHeight );
 }
@@ -220,8 +230,7 @@ function animate() {
   renderer.render( scene, camera );
   
   if (isScrolling) {
-    var scrollPosition = scroller.getSimUniform('scroll_position') + 1 / scrollDuration / 60;
-    scroller.setSimUniform('scroll_position', scrollPosition);
+    scroller.increaseScrollPosition();
   }
   if (scroller.getSimUniform('scroll_position') > 1.5) disableScrolling();
   stats.update();

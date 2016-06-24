@@ -128,6 +128,7 @@ GenericSimulation.prototype = {
   },
   
   createSimulationMesh: function() {
+    this.setupUniforms();
     var simulationMaterial = this.getSimulationMaterial();
     var geom = this.getBiUnitPlane();
     return new THREE.Mesh(geom, simulationMaterial);
