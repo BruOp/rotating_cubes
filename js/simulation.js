@@ -21,14 +21,15 @@ function Simulation(renderer, width, height, shaderHash) {
       height: { type: 'f', value: this.height },
       wave_speed: { type: 'f', value: 0.2 / Math.max(this.width, this.height) },
       damping_strength: { type: 'f', value: 0.02 },
-      mouse_magnitude: { type: "f", value: 0.0 },
+      using_mouse: { type: "f", value: 0.0 },
+      mouse_magnitude: { type: "f", value: 0.5 },
       draw_radius: { type: "f", value: 2 / this.width }
     };
   };
   
   this.changeMousePosition = function(mouse) {
-    simulation.setSimUniform('mouse', mouse);
-    simulation.setSimUniform('mouse_magnitude', 1);
+    this.setSimUniform('mouse', mouse);
+    this.setSimUniform('using_mouse', 1);
   };
   
   this.addGuiFolder = function(gui) {
@@ -36,6 +37,7 @@ function Simulation(renderer, width, height, shaderHash) {
     folder.add(this.simUniforms.wave_speed, 'value', 0.05 / Math.max(this.width, this.height), 0.8 / Math.max(this.width, this.height));
     folder.add(this.simUniforms.damping_strength, 'value', 0.0, 0.1);
     folder.add(this.simUniforms.draw_radius, 'value', 1 / this.width, 6 / this.width);
+    folder.add(this.simUniforms.mouse_magnitude, 'value', 0.0, 1.0);
   };
 };
 

@@ -30,8 +30,8 @@ function Scroller(renderer, width, height, shaderHash) {
   
   this.increaseScrollPosition = function() {
     var scrollDelta = 1 / this.scrollDuration / 60;
-    var scrollPosition = scroller.getSimUniform('scroll_position') + scrollDelta;
-    scroller.setSimUniform('scroll_position', scrollPosition);
+    var scrollPosition = this.getSimUniform('scroll_position') + scrollDelta;
+    this.setSimUniform('scroll_position', scrollPosition);
   }
   
   this.addGuiFolder = function(gui) {

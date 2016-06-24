@@ -7,6 +7,7 @@ varying vec2 vUv;
 uniform float wave_speed;
 uniform float damping_strength;
 uniform float mouse_magnitude;
+uniform float using_mouse;
 uniform float draw_radius;
 uniform float dx;
 uniform float dy;
@@ -96,7 +97,9 @@ vec2 get_next_positions(vec2 cur_positions, vec2 old_positions) {
 vec2 calculate_mouse_impact(vec2 uv) {
   // We need to scale our distance depending on our height/width
   vec2 mouse_distances = vec2(-1, height/width) * vec2(mouse - uv);
-  return 0.5 * mouse_magnitude * max(sign(draw_radius - length(mouse_distances)), 0.0) * mouse_distances;
+  return mouse_magnitude * using_mouse
+          * max(sign(draw_radius - length(mouse_distances)), 0.0) 
+          * mouse_distances;
 }
 
 
