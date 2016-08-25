@@ -1,18 +1,17 @@
 #define M_PI 3.1415926535897932384626433832795
 #define MAX_HYPOTENUESE 0.70710678118
-#define MIN_ANGLE 0.05
-#define MIN_SPEED 0.001
 
 precision highp float;
 
-uniform float width;
-uniform float height;
+uniform float rowCount;
+uniform float columnCount;
+uniform float boxLength;
+uniform float min_angle;
+uniform float min_speed;
+uniform float time;
 uniform mat4 modelViewMatrix;
 uniform mat4 projectionMatrix;
-
 uniform sampler2D rotationField;
-uniform float time;
-
 attribute vec3 position;
 attribute vec3 normal;
 attribute vec3 offset;
@@ -31,15 +30,15 @@ vec2 when_gt(vec2 x, vec2 y) {
 
 vec2 getScreenUV(vec3 offset) {
   return vec2(
-    (offset.x + .5 * width) / width,
-    (offset.y + .5 * height) / height
+    offset.x + .5,
+    offset.y + .5
   );
 }
 
 vec2 is_angle_and_speed_great_enough(vec2 angles, vec2 screenUV) {
   vec2 speed = texture2D(rotationField, screenUV).rg - texture2D(rotationField, screenUV).ba;
   return clamp(
-    when_gt(abs(angles), vec2(MIN_ANGLE, MIN_ANGLE)) + when_gt(length(speed), MIN_SPEED), 
+    when_gt(abs(angles), vec2(min_angle, min_angle)),
     0.,
     1.
   );
@@ -75,7 +74,7 @@ mat4 constructTransformationMatrix(vec2 angles, vec3 offset, vec2 screenUV) {
     cos(theta) * cos(phi),
     0
   );
-  rotationMatrix[3] = vec4(offset, 1);
+  rotationMatrix[3] = vec4(vec3(columnCount * boxLength, rowCount * boxLength, 1.) * offset, 1.);
 
   return rotationMatrix;
 }
@@ -83,11 +82,11 @@ mat4 constructTransformationMatrix(vec2 angles, vec3 offset, vec2 screenUV) {
 void main() {
   vUv = uv;
   vNormal = normal;
-  
+
   vec2 screenUV = getScreenUV(offset);
   // We sample our rotation field by the cubes position from origin;
   vec2 angles = convertToRadians(texture2D(rotationField, screenUV).rg);
   mat4 rotationMatrix = constructTransformationMatrix(angles, offset, screenUV);
-  
+
   gl_Position = projectionMatrix * modelViewMatrix * rotationMatrix * vec4(position, 1.);
 }

@@ -21,7 +21,7 @@ vec2 calculateUV(vec3 normal, vec2 uv) {
 }
 
 void main() {
-  
+
   vec2 uv = calculateUV(vNormal, vUv);
   gl_FragColor = texture2D(map, uv);
 }

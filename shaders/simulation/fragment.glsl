@@ -83,33 +83,43 @@ float calculate_wave_equation(float cur_position, float old_position, vec2 gradi
 }
 
 vec2 get_next_positions(vec2 cur_positions, vec2 old_positions) {
+
   vec2 x_derivs = get_x_derivs(cur_positions);
   vec2 y_derivs = get_y_derivs(cur_positions);
   vec2 phi_gradient = vec2(x_derivs.x, y_derivs.x);
   vec2 theta_gradient = vec2(x_derivs.y, y_derivs.y);
-  
+
   return vec2(
     calculate_wave_equation(cur_positions.x, old_positions.x, phi_gradient),
     calculate_wave_equation(cur_positions.y, old_positions.y, theta_gradient)
   );
 }
 
-vec2 calculate_mouse_impact(vec2 uv) {
-  // We need to scale our distance depending on our height/width
-  vec2 mouse_distances = vec2(-1, height/width) * vec2(mouse - uv);
-  return mouse_magnitude * using_mouse
-          * max(sign(draw_radius - length(mouse_distances)), 0.0) 
-          * mouse_distances;
+vec2 calculate_mouse_distance(vec2 uv) {
+  return vec2(-1, height/width) * vec2(mouse - uv);
 }
 
+float is_within_mouse_distance(vec2 mouse_distances) {
+  return max(sign(draw_radius - length(mouse_distances)), 0.0);
+}
+
+vec2 calculate_mouse_impact(vec2 uv) {
+  // We need to scale our distance depending on our height/width
+  vec2 mouse_distances = calculate_mouse_distance(uv);
+  return mouse_magnitude * using_mouse
+          * is_within_mouse_distance(mouse_distances)
+          * mouse_distances;
+}
 
 void main() {
   vec2 cur_positions = get_texture_values(vUv).rg;
   vec2 old_positions = get_texture_values(vUv).ba;
+  float final_phi_position;
+  float final_theta_position;
   vec2 new_positions = get_next_positions(cur_positions, old_positions);
   vec2 mouse_impact = calculate_mouse_impact(vUv);
-  float final_phi_position   = clamp(new_positions.x + mouse_impact.y, 0., 1.);
-  float final_theta_position = clamp(new_positions.y + mouse_impact.x, 0., 1.);
+  final_phi_position   = clamp(new_positions.x + mouse_impact.y, 0., 1.);
+  final_theta_position = clamp(new_positions.y + mouse_impact.x, 0., 1.);
   //Discard values that are less than min amount
   gl_FragColor = vec4(final_phi_position, final_theta_position, cur_positions.x, cur_positions.y);
 }

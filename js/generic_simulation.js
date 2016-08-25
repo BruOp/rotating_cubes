@@ -8,19 +8,20 @@ var GenericSimulation = function(renderer, width, height, shaderHash) {
 }
 
 GenericSimulation.prototype = {
-  
+  requiredExtensions: ['OES_texture_float'],
+
   setUniform: function(mesh, uniformName, newValue) {
     return mesh.material.uniforms[uniformName].value = newValue;
   },
-  
+
   setSimUniform: function(uniformName, newValue) {
     return this.setUniform(this.simulationMesh, uniformName, newValue);
   },
-  
+
   getUniform: function(mesh, uniformName) {
     return mesh.material.uniforms[uniformName].value;
   },
-  
+
   getSimUniform: function(uniformName) {
     return this.simulationMesh.material.uniforms[uniformName].value;
   },
@@ -33,7 +34,7 @@ GenericSimulation.prototype = {
       this.renderer.render(this.passThroughScene, this.orthoCamera, output);
     }
   },
-  
+
   renderSimulation: function(output) {
     this.renderer.render(this.simulationScene, this.orthoCamera, output);
   },
@@ -47,13 +48,13 @@ GenericSimulation.prototype = {
     this.renderSimulation(this.rtPositionCur);
     this.setSimUniform("position_texture", this.rtPositionCur.texture);
   },
-  
+
   update: function() {
     // This performs only one render pass, but must render twice still.
     this.renderSimulation(this.rtPositionNew);
     this.passThroughRender(this.rtPositionNew, this.rtPositionCur)
   },
-  
+
   getCurrentPositionTexture: function() {
     return this.rtPositionCur.texture;
   },
@@ -74,7 +75,7 @@ GenericSimulation.prototype = {
     texture.needsUpdate = true;
     return texture;
   },
-  
+
   getRenderTargets: function() {
     var dtPosition = this.generatePositionTexture();
     return [1,2].map(function() {
@@ -83,7 +84,7 @@ GenericSimulation.prototype = {
       return rtt;
     }.bind(this))
   },
-  
+
   getRenderTarget: function(options) {
     var userOptions = options || {};
     var defaultOptions = this.defaultRenderTargetOptions();
@@ -93,7 +94,7 @@ GenericSimulation.prototype = {
     var renderTarget = new THREE.WebGLRenderTarget(this.width, this.height, defaultOptions);
     return renderTarget;
   },
-  
+
   defaultRenderTargetOptions: function() {
     return {
       wrapS: THREE.ClampToEdge,
@@ -106,7 +107,7 @@ GenericSimulation.prototype = {
       depthBuffer: false
     };
   },
-  
+
   checkForExtensions: function() {
     var gl = this.renderer.getContext();
     //1 we need FLOAT Textures to store positions
@@ -114,7 +115,7 @@ GenericSimulation.prototype = {
       throw new Error( "float textures not supported" );
     }
   },
-  
+
   createPassThroughMesh: function() {
     var geom = this.getBiUnitPlane();
     var material = new THREE.RawShaderMaterial({
@@ -126,14 +127,14 @@ GenericSimulation.prototype = {
     });
     return new THREE.Mesh(geom, material);
   },
-  
+
   createSimulationMesh: function() {
     this.setupUniforms();
     var simulationMaterial = this.getSimulationMaterial();
     var geom = this.getBiUnitPlane();
     return new THREE.Mesh(geom, simulationMaterial);
   },
-  
+
   initSceneAndMeshes: function(simulationMaterial) {
     this.checkForExtensions();
 
@@ -146,8 +147,9 @@ GenericSimulation.prototype = {
     this.passThroughMesh = this.createPassThroughMesh();
     this.passThroughScene.add(this.passThroughMesh);
 
-    [this.rtPositionCur, this.rtPositionNew] = this.getRenderTargets(this, this.width, this.height);
-
+    var rtPositions = this.getRenderTargets(this, this.width, this.height);
+    this.rtPositionCur = rtPositions[0];
+    this.rtPositionNew = rtPositions[1];
     this.simulationMesh = this.createSimulationMesh()
     this.simulationScene.add(this.simulationMesh);
   }
