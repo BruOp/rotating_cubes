@@ -16,9 +16,11 @@ attribute vec3 position;
 attribute vec3 normal;
 attribute vec3 offset;
 attribute vec2 uv;
+uniform vec3 colors[4];
 
 varying vec3 vNormal;
 varying vec2 vUv;
+varying vec3 vColor;
 
 float when_gt(float x, float y) {
   return max(sign(x - y), 0.0);
@@ -79,6 +81,12 @@ mat4 constructTransformationMatrix(vec2 angles, vec3 offset, vec2 screenUV) {
   return rotationMatrix;
 }
 
+int indexFromNormal(vec3 normal) {
+  highp int index = int(length(vec3(2. * normal.x, 1. * normal.y, 0.0)));
+  return index;
+}
+
+
 void main() {
   vUv = uv;
   vNormal = normal;
@@ -87,6 +95,8 @@ void main() {
   // We sample our rotation field by the cubes position from origin;
   vec2 angles = convertToRadians(texture2D(rotationField, screenUV).rg);
   mat4 rotationMatrix = constructTransformationMatrix(angles, offset, screenUV);
+
+  vColor = colors[indexFromNormal(vNormal)];
 
   gl_Position = projectionMatrix * modelViewMatrix * rotationMatrix * vec4(position, 1.);
 }

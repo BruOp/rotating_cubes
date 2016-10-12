@@ -1,5 +1,12 @@
 "use strict";
 
+var COLORS = [
+  new THREE.Color('#2d2d2d'),
+  new THREE.Color('#03bdab'),
+  new THREE.Color('#ffbd1b'),
+  new THREE.Color('#2d2d2d')
+];
+
 var Cubes = function() {
   this.sceneIndex = 0;
   this.loadingManager = new THREE.LoadingManager();
@@ -29,11 +36,12 @@ var Cubes = function() {
     var folder = gui.addFolder("Cube Wave");
     folder.add(this.waveUniforms.min_angle, 'value', 0.01, 0.5).name("Minimum Angle");
     folder.add(this.waveUniforms.min_speed, 'value', 0.01, 0.5).name("Minimum Speed");
+    gui.add(this, 'shouldDisplayDebug').onChange(this.displayDebugPlane.bind(this));
   }
 
   this.initRendererAndCheckExtensions = function() {
     try {
-      this.renderer = new THREE.WebGLRenderer({ antialias: false });
+      this.renderer = new THREE.WebGLRenderer({ antialias: true });
     } catch (e) {
       return false;
     }
@@ -56,7 +64,8 @@ var Cubes = function() {
   }
 
   this.addDebugPlane = function(scene) {
-    var plane = new THREE.PlaneGeometry( this.width/4, this.height/4, 1, 1);
+    this.debugMeshWidth = 0.25 * this.width;
+    var plane = new THREE.PlaneGeometry( this.debugMeshWidth, 0.5 * this.debugMeshWidth, 1, 1);
     var planeMaterial = new THREE.RawShaderMaterial({
       uniforms: {
         texture: { type: "t", value: this.waveSim.getCurrentPositionTexture() }
@@ -65,11 +74,16 @@ var Cubes = function() {
       fragmentShader: ShaderLoader.get('debug_fragment'),
       transparent: true
     });
-    var planeMesh = new THREE.Mesh( plane, planeMaterial );
-    planeMesh.position.z = 2 * this.boxGrid.boxLengthInPixels;
-    planeMesh.position.x = this.width/3;
-    planeMesh.position.y = this.height/4;
-    scene.add( planeMesh );
+    this.debugMesh = new THREE.Mesh( plane, planeMaterial );
+    this.debugMesh.position.z = 2 * this.boxGrid.boxLengthInPixels;
+    this.setDebugMeshPosition(this.width, this.debugMeshWidth);
+    this.debugMesh.position.y = 0.4 * this.height - 0.5 * this.debugMeshWidth;
+    
+    scene.add( this.debugMesh );
+  }
+  
+  this.setDebugMeshPosition = function(width, meshWidth) {
+    this.debugMesh.position.x = 0.5 * width - 0.6 * meshWidth;
   }
 
   // EVENT HANDLERS
@@ -89,9 +103,10 @@ var Cubes = function() {
   };
 
   this.onWindowResize = function( event ) {
-    this.width = window.innerWidth;
-    this.height = window.innerHeight;
+    this.width = this.container.clientWidth;
+    this.height = this.container.clientHeight;
 
+    this.setDebugMeshPosition(this.width, this.debugMeshWidth);
     this.boxGrid.adjustBoxLengths(this.width, this.height);
 
     this.waveUniforms.boxLength.value = this.boxGrid.boxLengthInPixels;
@@ -103,16 +118,18 @@ var Cubes = function() {
     this.camera.updateProjectionMatrix();
 
     this.renderer.setSize( this.width, this.height );
-
-    if (this.width < SCREEN_WIDTH_UPPER_LIMITS.medium) {
-      this.stopAnimating();
-    } else if (this.animationID === undefined) {
-      this.animate();
-    }
+    
   }
 
   this.setOnLoad = function(loadCallback) {
     this.loadingManager.onLoad = loadCallback
+  }
+  
+  this.displayDebugPlane = function(shouldDisplay) {
+    if (shouldDisplay)
+      this.scene.add( this.debugMesh );
+    else
+      this.scene.remove( this.debugMesh);
   }
 
   // MATERIALS AND UNIFORMS
@@ -127,10 +144,10 @@ var Cubes = function() {
 
   this.initWaveMaterial = function() {
     var texture = this.getTexture('cubeMap.png');
-
     this.waveUniforms = {
       rotationField: { type: "t", value: this.waveSim.getCurrentPositionTexture() },
-      map: { type: "t", value: texture },
+      // map: { type: "t", value: texture },
+      colors: { type: "vec3", value: COLORS },
       min_angle: { type: 'f', value: 0.08 },
       min_speed: { type: 'f', value: 0.1 },
       rowCount: { type: "f", value: this.boxGrid.rowCount },
@@ -148,9 +165,6 @@ var Cubes = function() {
 
   // INITIALIZATION AND MAIN RENDER LOOP
   this.init = function() {
-    this.width  = window.innerWidth;
-    this.height = window.innerHeight;
-
     var waveSimShaderHash = {
       simulation: {
         vertex: ShaderLoader.get('simulation_vertex'),
@@ -163,6 +177,8 @@ var Cubes = function() {
     };
 
     this.container = document.getElementById( 'webgl-container' );
+    this.width  = this.container.clientWidth;
+    this.height = this.container.clientHeight;
 
     this.boxGrid = new InstancedBoxGridGeometry(this.width, this.height);
 
@@ -193,6 +209,7 @@ var Cubes = function() {
     this.scene.add( this.mesh );
 
     // If you need to debug the simulation FBOs
+    this.shouldDisplayDebug = true
     this.addDebugPlane(this.scene)
 
     this.container.appendChild( this.renderer.domElement );
